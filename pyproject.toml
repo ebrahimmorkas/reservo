@@ -19,6 +19,7 @@ known-first-party = ["apps", "config"]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
+filterwarnings = ["ignore:No directory at:UserWarning"]
 
 [tool.coverage.run]
 source = ["apps"]
