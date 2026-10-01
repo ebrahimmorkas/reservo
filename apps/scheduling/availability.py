@@ -20,6 +20,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from apps.bookings.models import Booking
 from apps.catalog.models import Business, Service
 
 from .models import TimeOff
@@ -36,10 +37,21 @@ class Interval:
         return self.start < other.end and other.start < self.end
 
 
-def busy_intervals(business: Business, start: datetime, end: datetime) -> list[Interval]:
+def busy_intervals(
+    business: Business,
+    start: datetime,
+    end: datetime,
+    *,
+    exclude_booking: Booking | None = None,
+) -> list[Interval]:
     """All intervals within ``[start, end)`` during which the business is unavailable."""
     time_off = TimeOff.objects.filter(business=business, starts_at__lt=end, ends_at__gt=start)
-    return [Interval(t.starts_at, t.ends_at) for t in time_off]
+    bookings = Booking.objects.active().filter(business=business).overlapping(start, end)
+    if exclude_booking is not None:
+        bookings = bookings.exclude(pk=exclude_booking.pk)
+    return [Interval(t.starts_at, t.ends_at) for t in time_off] + [
+        Interval(b.starts_at, b.blocked_until) for b in bookings
+    ]
 
 
 def working_windows(business: Business, day: date) -> list[Interval]:
@@ -53,8 +65,13 @@ def working_windows(business: Business, day: date) -> list[Interval]:
     ]
 
 
-def compute_slots(service: Service, day: date) -> list[datetime]:
-    """Compute every bookable start time for ``service`` on ``day`` (ignores 'now')."""
+def compute_slots(
+    service: Service, day: date, *, exclude_booking: Booking | None = None
+) -> list[datetime]:
+    """Compute every bookable start time for ``service`` on ``day`` (ignores 'now').
+
+    ``exclude_booking`` lets a booking being rescheduled ignore its own current slot.
+    """
     windows = working_windows(service.business, day)
     if not windows:
         return []
@@ -62,7 +79,10 @@ def compute_slots(service: Service, day: date) -> list[datetime]:
     step = timedelta(minutes=settings.RESERVO_SLOT_STEP_MINUTES)
     length = timedelta(minutes=service.blocked_minutes)
     busy = busy_intervals(
-        service.business, min(w.start for w in windows), max(w.end for w in windows)
+        service.business,
+        min(w.start for w in windows),
+        max(w.end for w in windows),
+        exclude_booking=exclude_booking,
     )
 
     slots: set[datetime] = set()
