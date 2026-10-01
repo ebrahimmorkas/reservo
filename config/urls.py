@@ -7,6 +7,7 @@ api_v1 = [
     path("auth/", include("apps.accounts.urls")),
     path("", include("apps.catalog.urls")),
     path("", include("apps.scheduling.urls")),
+    path("", include("apps.bookings.urls")),
 ]
 
 urlpatterns = [
