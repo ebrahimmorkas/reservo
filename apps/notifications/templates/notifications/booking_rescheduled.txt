@@ -1,0 +1,6 @@
+Booking #{{ booking.pk }} has been moved.
+
+  Service:   {{ booking.service.name }} at {{ booking.business.name }}
+  New time:  {{ local_start|date:"l, j F Y \a\t H:i" }} ({{ booking.business.timezone }})
+
+Reservo

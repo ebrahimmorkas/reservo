@@ -1,0 +1,8 @@
+New booking for {{ booking.business.name }}
+
+  Service:   {{ booking.service.name }}
+  Customer:  {{ booking.customer.get_full_name|default:booking.customer.email }}
+  When:      {{ local_start|date:"l, j F Y \a\t H:i" }} ({{ booking.business.timezone }})
+{% if booking.notes %}  Notes:     {{ booking.notes }}
+{% endif %}
+Booking reference: #{{ booking.pk }}

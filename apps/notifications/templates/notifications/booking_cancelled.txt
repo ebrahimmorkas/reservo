@@ -1,0 +1,7 @@
+Booking #{{ booking.pk }} has been cancelled.
+
+  Service:  {{ booking.service.name }} at {{ booking.business.name }}
+  Was at:   {{ local_start|date:"l, j F Y \a\t H:i" }} ({{ booking.business.timezone }})
+{% if booking.cancellation_reason %}  Reason:   {{ booking.cancellation_reason }}
+{% endif %}
+Reservo

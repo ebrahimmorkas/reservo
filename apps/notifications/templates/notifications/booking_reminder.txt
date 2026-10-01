@@ -1,0 +1,11 @@
+Hi {{ booking.customer.first_name|default:"there" }},
+
+A friendly reminder of your upcoming appointment.
+
+  Service:  {{ booking.service.name }}
+  Where:    {{ booking.business.name }}{% if booking.business.address %}, {{ booking.business.address }}{% endif %}
+  When:     {{ local_start|date:"l, j F Y \a\t H:i" }} ({{ booking.business.timezone }})
+
+Need to change it? You can reschedule or cancel from your bookings page.
+
+Reservo

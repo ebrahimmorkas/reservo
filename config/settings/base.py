@@ -38,6 +38,7 @@ LOCAL_APPS = [
     "apps.catalog",
     "apps.scheduling",
     "apps.bookings",
+    "apps.notifications",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -100,6 +101,25 @@ else:
             "LOCATION": "reservo",
         }
     }
+
+# --- Celery ---------------------------------------------------------------------
+# With a broker, tasks run in a worker process. Without one, they execute eagerly
+# (synchronously, in-process), so emails and reminders still work with zero setup.
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL or None)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=not CELERY_BROKER_URL)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    "send-upcoming-reminders": {
+        "task": "apps.notifications.tasks.send_upcoming_reminders",
+        "schedule": 15 * 60,
+    },
+}
+if not CELERY_BROKER_URL:
+    CELERY_BROKER_URL = "memory://"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -170,6 +190,7 @@ RESERVO_SLOT_STEP_MINUTES = env.int("RESERVO_SLOT_STEP_MINUTES", default=15)
 RESERVO_MIN_NOTICE_MINUTES = env.int("RESERVO_MIN_NOTICE_MINUTES", default=60)
 RESERVO_BOOKING_HORIZON_DAYS = env.int("RESERVO_BOOKING_HORIZON_DAYS", default=90)
 RESERVO_CANCELLATION_WINDOW_HOURS = env.int("RESERVO_CANCELLATION_WINDOW_HOURS", default=2)
+RESERVO_REMINDER_LEAD_HOURS = env.int("RESERVO_REMINDER_LEAD_HOURS", default=24)
 
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Reservo <no-reply@reservo.local>")
