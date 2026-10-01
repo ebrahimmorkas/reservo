@@ -37,6 +37,7 @@ LOCAL_APPS = [
     "apps.accounts",
     "apps.catalog",
     "apps.scheduling",
+    "apps.bookings",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -168,6 +169,7 @@ SIMPLE_JWT = {
 RESERVO_SLOT_STEP_MINUTES = env.int("RESERVO_SLOT_STEP_MINUTES", default=15)
 RESERVO_MIN_NOTICE_MINUTES = env.int("RESERVO_MIN_NOTICE_MINUTES", default=60)
 RESERVO_BOOKING_HORIZON_DAYS = env.int("RESERVO_BOOKING_HORIZON_DAYS", default=90)
+RESERVO_CANCELLATION_WINDOW_HOURS = env.int("RESERVO_CANCELLATION_WINDOW_HOURS", default=2)
 
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Reservo <no-reply@reservo.local>")

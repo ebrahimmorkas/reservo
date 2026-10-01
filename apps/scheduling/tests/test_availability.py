@@ -80,10 +80,11 @@ def test_min_notice_hides_slots_too_close_to_now(service, settings):
     assert slots[0] == at(10, 30)
 
 
-def test_cache_is_invalidated_when_time_off_is_added(service):
+def test_cache_is_invalidated_when_time_off_is_added(service, django_capture_on_commit_callbacks):
     assert at(9) in get_available_slots(service, MONDAY, now=LONG_AGO)
 
-    TimeOffFactory(business=service.business, starts_at=at(9), ends_at=at(12))
+    with django_capture_on_commit_callbacks(execute=True):
+        TimeOffFactory(business=service.business, starts_at=at(9), ends_at=at(12))
 
     assert get_available_slots(service, MONDAY, now=LONG_AGO) == []
 
