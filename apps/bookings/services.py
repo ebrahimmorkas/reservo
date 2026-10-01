@@ -9,6 +9,7 @@ same slot therefore cannot both succeed.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from functools import partial
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -17,6 +18,7 @@ from django.utils import timezone
 
 from apps.catalog.models import Business, Service
 from apps.core.exceptions import DomainError
+from apps.notifications.tasks import notify_booking_event
 from apps.scheduling.availability import compute_slots
 
 from .models import Booking
@@ -25,6 +27,11 @@ from .models import Booking
 class SlotUnavailable(DomainError):
     default_code = "slot_unavailable"
     default_detail = "The requested time slot is no longer available."
+
+
+def _notify(booking: Booking, event: str) -> None:
+    """Queue a notification once the surrounding transaction has committed."""
+    transaction.on_commit(partial(notify_booking_event.delay, booking.pk, event))
 
 
 class InvalidTransition(DomainError):
@@ -56,7 +63,7 @@ def create_booking(*, customer, service: Service, starts_at: datetime, notes: st
     _assert_bookable(service, starts_at)
 
     ends_at = starts_at + timedelta(minutes=service.duration_minutes)
-    return Booking.objects.create(
+    booking = Booking.objects.create(
         customer=customer,
         business_id=service.business_id,
         service=service,
@@ -66,6 +73,8 @@ def create_booking(*, customer, service: Service, starts_at: datetime, notes: st
         price=service.price,
         notes=notes,
     )
+    _notify(booking, "confirmed")
+    return booking
 
 
 @transaction.atomic
@@ -85,6 +94,7 @@ def reschedule_booking(*, booking: Booking, starts_at: datetime, actor) -> Booki
     booking.save(
         update_fields=["starts_at", "ends_at", "blocked_until", "reminder_sent_at", "updated_at"]
     )
+    _notify(booking, "rescheduled")
     return booking
 
 
@@ -99,6 +109,7 @@ def cancel_booking(*, booking: Booking, actor, reason: str = "") -> Booking:
     booking.cancelled_at = timezone.now()
     booking.cancellation_reason = reason
     booking.save(update_fields=["status", "cancelled_at", "cancellation_reason", "updated_at"])
+    _notify(booking, "cancelled")
     return booking
 
 
