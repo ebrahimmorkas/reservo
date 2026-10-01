@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 
-SECRET_KEY = env("SECRET_KEY", default="insecure-dev-key-change-me")
+SECRET_KEY = env("SECRET_KEY", default="insecure-dev-key-change-me-0123456789abcdef")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
@@ -30,9 +30,11 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 LOCAL_APPS = [
     "apps.core",
+    "apps.accounts",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -48,6 +50,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "config.urls"
+AUTH_USER_MODEL = "accounts.User"
 
 TEMPLATES = [
     {
@@ -117,6 +120,7 @@ STORAGES = {
 # --- Django REST Framework ------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -137,6 +141,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": env("THROTTLE_ANON", default="60/min"),
         "user": env("THROTTLE_USER", default="300/min"),
+        "auth": env("THROTTLE_AUTH", default="10/min"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
 }
@@ -153,6 +158,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_MINUTES", default=30)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_DAYS", default=7)),
     "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 

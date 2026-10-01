@@ -2,7 +2,7 @@ from .base import *  # noqa: F403
 from .base import REST_FRAMEWORK
 
 DEBUG = False
-SECRET_KEY = "test-secret-key"
+SECRET_KEY = "test-secret-key-that-is-long-enough-for-hs256"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 STORAGES = {
